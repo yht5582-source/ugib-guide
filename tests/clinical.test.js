@@ -17,3 +17,15 @@ test('CV threshold 8',()=>assert.match(transfusionAdvice(8,'cv').title,/達 ESGE
 test('stable 7.1',()=>assert.match(transfusionAdvice(7.1,'stable').title,/高於/));
 test('transfusion incomplete',()=>assert.equal(transfusionAdvice('','stable'),null));
 test('bad Hb',()=>assert.equal(transfusionAdvice(-1,'stable'),null));
+import{childPugh,emptyChildPugh,forrestGuidance}from'../src/clinical.js';
+const cpBase={bili:1,alb:4,inr:1.1,ascites:'1',he:'1'};
+test('Child-Pugh minimum 5 A',()=>assert.deepEqual([childPugh(cpBase).total,childPugh(cpBase).cls],[5,'A']));
+test('Child-Pugh maximum 15 C',()=>assert.deepEqual([childPugh({bili:5,alb:2,inr:3,ascites:'3',he:'3'}).total,childPugh({bili:5,alb:2,inr:3,ascites:'3',he:'3'}).cls],[15,'C']));
+for(const[k,cases]of Object.entries({bili:[[1.99,5],[2,6],[3,6],[3.01,7]],alb:[[3.51,5],[3.5,6],[2.8,6],[2.79,7]],inr:[[1.69,5],[1.7,6],[2.3,6],[2.31,7]]}))for(const[v,want]of cases)test(`Child-Pugh ${k} ${v}`,()=>assert.equal(childPugh({...cpBase,[k]:v}).total,want));
+test('Child-Pugh B boundary 7/9 and C 10',()=>{assert.equal(childPugh({...cpBase,ascites:'2',he:'2'}).cls,'B');assert.equal(childPugh({...cpBase,bili:4,ascites:'2',he:'2'}).total,9);assert.equal(childPugh({...cpBase,bili:4,ascites:'2',he:'2'}).cls,'B');assert.equal(childPugh({...cpBase,bili:4,alb:2,ascites:'2'}).cls,'C')});
+test('Child-Pugh incomplete',()=>assert.equal(childPugh(emptyChildPugh).total,null));
+test('Child-Pugh bad grade',()=>assert.equal(childPugh({...cpBase,he:'4'}).total,null));
+test('Child-Pugh bad INR',()=>assert.equal(childPugh({...cpBase,inr:-1}).total,null));
+test('Forrest Ia/Ib requires combination, not epinephrine alone',()=>assert.match(forrestGuidance.active,/第二種/));
+test('missing fields listed',()=>assert.deepEqual(calculateGBS({...base,hb:'',hr:''}).missing,['hb','hr']));
+test('transfusion variceal threshold 7',()=>assert.match(transfusionAdvice(7,'variceal').title,/約達/));
